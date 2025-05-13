@@ -31,15 +31,13 @@
 #           push: true
 #           tags: nikhil635/graphgen-ai:latest
 
-name: Build, Push, and Scan Docker Image
+name: Build and Push Docker image
 
 on:
   push:
-    tags:
-      - 'v*.*.*'  # Trigger the workflow for version tags like v1.0.0, v2.0.1 etc.
     branches:
       - main
-      - enhancement/**
+      - enhancement/**  # optional: builds on enhancement branches too
   pull_request:
 
 jobs:
@@ -49,15 +47,8 @@ jobs:
       image_tag: ${{ steps.set_tag.outputs.image_tag }}
 
     steps:
-      - name: Checkout source
+      - name: Checkout source code
         uses: actions/checkout@v3
-
-      - name: Set image tag
-        id: set_tag
-        run: |
-          # Get the tag from GitHub and use it as the image version
-          echo "image_tag=nikhil635/graphgen-ai:${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV  # Dynamic version tag
-          echo "image_tag=nikhil635/graphgen-ai:${GITHUB_REF#refs/tags/}"  # To make sure it's printed
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -68,12 +59,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set image tag
+        id: set_tag
+        run: echo "::set-output name=image_tag::nikhil635/graphgen-ai:latest"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ env.image_tag }}  # Use dynamic tag like v1.1.0
+          tags: nikhil635/graphgen-ai:latest
 
   scan:
     name: Scan Docker Image with Trivy
@@ -84,9 +79,10 @@ jobs:
       - name: Install Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.image_tag }}  # Use the dynamic versioned image tag
+          image-ref: ${{ needs.build.outputs.image_tag }}
           format: 'table'
           exit-code: '0'  # Set to '1' if you want to fail on vulnerabilities
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
 
