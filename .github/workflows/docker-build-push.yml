@@ -81,7 +81,7 @@ jobs:
         with:
           image-ref: ${{ needs.build.outputs.image_tag }}
           format: 'table'
-          exit-code: '0'  # Set to '1' if you want to fail on vulnerabilities
+          exit-code: 0  # Set to '1' if you want to fail on vulnerabilities
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
